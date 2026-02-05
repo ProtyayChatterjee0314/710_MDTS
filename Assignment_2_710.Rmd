@@ -1,0 +1,270 @@
+---
+title: "Assignment_2"
+author: "PROTYAY CHATTERJEE"
+date: "2026-02-04"
+output: html_document
+---
+### 1. Problem to demonstrate that the population regression line is fixed, but least square regression line varies
+
+Suppose the population regression line is given by Y = 2 + 3x, while the data
+comes from the model y = 2 + 3x + ε.
+Step 1: For x in the range [5,10] graph the population regression line.
+Step 2: Generate xi(i = 1, 2, .., n) from Uniform(5, 10) and εi(i = 1, 2, .., n)
+from $N(0, 4^2)$. Hence, compute y1, y2, .., yn.
+Step 3: On the basis of the data (xi, yi)(i = 1, 2, .., n) generated in Step 2,
+report the least squares regression line.
+Step 4: Repeat steps 2-3 five times. Graph the 5 least squares regression lines
+over the population regression line obtained in Step 1.
+Interpret the findings.
+Take n = 50. Set the seed as seed=123.
+
+
+
+
+```{r}
+set.seed(123)
+x=seq(5,10,0.025)
+y=2+3*x
+y
+#1
+plot(x,y,type='l')
+#2
+x_i=runif(50,5,10)
+x_i
+ei=rnorm(50,0,4)
+ei
+y_i=2+3*x_i+ei
+y_i
+points(x_i,y_i,col='red')
+#3
+
+linreg=lm(y_i~x_i)
+abline(linreg,col='blue')
+coef(linreg)
+summary(linreg)
+
+#4
+
+## beta not is 2 however the intrcept is -0.0963... which are not similar
+
+
+beta_hat=c()
+for(i in 1:5){
+  x_i=runif(50,5,10)
+  ei=rnorm(50,0,4)
+  y_i=2+3*x_i+ei
+  linreg=lm(y_i~x_i)
+  beta_hat=cbind(beta_hat,coef(linreg))
+  abline(linreg,col=i+1)
+  coef(linreg)
+}
+beta.hat=as.data.frame(beta_hat)
+beta.hat
+
+```
+
+
+### 2. Problem to demonstrate that βˆ0 and βˆ minimises RSS
+
+Step 1: Generate xi from Uniform(5, 10) and mean centre the values. Generate εi from N(0, 1). Calculate yi = 2+3xi+εi, 
+i = 1,2,.., n. Take n=50 and seed=123.
+Step 2: Now imagine that you only have the data on (xi, yi), i = 1, 2, .., n,
+without knowing the mechanism that was used to generate the data in step 1.
+Assuming a linear regression of the type yi = β0 + βxi + εi, and based on these
+data (xi, yi), i = 1, 2, .., n, obtain the least squares estimates of β0 and β.
+Step 3: Take a large number of grid values of (β0, β) that also include the least
+squares estimates obtained from step 2. Compute the RSS for each parametric
+choice of (β0, β), where RSS = $(y1 − β0 − βx1)^2$ + $(y2 − β0 − βx2)^2$ + ....$(yn −β0 − βxn)^2$.
+Find out for which combination of (β0, β), RSS is minimum.
+
+
+```{r}
+set.seed(123)
+x_ii=runif(50,5,10)
+x_ii
+eii=rnorm(50,0,1)
+eii
+y_ii=2+3*x_ii+eii
+y_ii
+
+model= lm(y_ii ~ x_ii)
+
+# Least squares estimates
+beta0_hat=coef(model) [1]
+beta_hat=coef(model)[2]
+
+beta0_hat
+beta_hat
+
+
+beta0_grid= seq(beta0_hat-2, beta0_hat + 2, length.out = 100)
+beta_grid = seq(beta_hat-2, beta_hat + 2, length.out = 100)
+
+RSS <- matrix(NA, nrow = length(beta0_grid), ncol = length(beta_grid))
+
+# Compute RSS for each (beta0, beta)
+for (i in 1:length(beta0_grid)) {
+  for (j in 1:length(beta_grid)) {
+    RSS[i, j] <- sum((y_ii - beta0_grid[i] - beta_grid[j] * x_ii)^2)
+  }
+}
+which(RSS == min(RSS), arr.ind=TRUE)
+# Find minimum RSS
+min_RSS <- min(RSS)
+index <- which(RSS == min_RSS, arr.ind = TRUE)
+
+beta0_min <- beta0_grid[index[1]]
+beta_min  <- beta_grid[index[2]]
+
+beta0_min
+beta_min
+```
+### 3. Problem to demonstrate that least square estimators are unbiased
+
+Step 1: Generate xi(i = 1, 2, .., n) from Uniform(0, 1), εi(i = 1, 2, .., n) from
+N(0, 1) and hence generate y using yi = β0 + βxi + εi. (Take β0 = 2, β = 3).
+
+Step 2: On the basis of the data (xi, yi)(i = 1, 2, .., n) generated in Step 1,
+obtain the least square estimates of β0 and β.
+Repeat Steps 1-2, R = 1000 times. In each simulation obtain βˆ0 and βˆ. 
+Finally,the least-square estimates will be given by the average of these estimated values.
+Compare these with the true β0 and β and comment.
+Take n = 50 and seed=123.
+```{r}
+#3
+set.seed(123)
+x_3=runif(50,0,1)
+x_3
+
+e_3=rnorm(50,0,1)
+e_3
+y_3=2+3*x_3+e_3
+model_3= lm(y_3 ~ x_3)
+model_3
+
+set.seed(123)
+
+n= 50
+R= 1000
+
+beta0_hat <- numeric(R)
+beta_hat  <- numeric(R)
+
+for (r in 1:R) {
+  
+  x_3 <- runif(n, 0, 1)
+  e_3 <- rnorm(n, 0, 1)     # using our error term
+  y_3 <- 2 + 3 * x_3 + e_3
+  
+  model_3 <- lm(y_3 ~ x_3)
+  
+  beta0_hat[r] <- coef(model_3)[1]
+  beta_hat[r]  <- coef(model_3)[2]
+}
+mean(beta0_hat)
+mean(beta_hat)
+var(beta0_hat)
+var(beta_hat)
+```
+This demonstrate that the Least Squares Estimators are unbiased.The average of the 1,000 estimated coefficients ($\hat{\beta}_0$ and $\hat{\beta}_1$) is extremely close to the true parameter values ($\beta_0 = 2$ and $\beta_1 = 3$). The small differences observed in the table are due to sampling variability and would approach zero as the number of simulations ($R$) increases towards infinity.
+
+## Question 4 : Comparing several simple linear regressions
+
+Attach “Boston” data from MASS library in R. Select median value of owner-
+occupied homes, as the response and per capita crime rate, nitrogen oxides
+
+concentration, proportion of blacks and percentage of lower status of the popu-
+lation as predictors.
+
+(a) Selecting the predictors one by one, run four separate linear regressions to
+the data. Present the output in a single table.
+(b) Which model gives the best fit?
+(c) Compare the coefficients of the predictors from each model and comment on
+the usefulness of the predictors.
+
+```{r}
+library(MASS)
+x1=Boston
+y=Boston$medv#response
+x=data.frame(x1$crim,x1$nox,x1$black,x1$lstat)#predictor
+y
+model1=lm(y~x1$crim)
+model1
+summary(model1)
+model2=lm(y~x1$nox)
+model2
+model3=lm(y~x1$black)
+model3
+model4=lm(y~x1$lstat)
+model4
+models=c("model of y vs crim","model of y vs nox","model of y vs black","model of y vs lstat")
+beta_hat_0=c(coef(model1)[1],coef(model2)[1],coef(model3)[1],coef(model4)[1])
+beta_hat=c(coef(model1)[2],coef(model2)[2],coef(model3)[2],coef(model4)[2])
+Data=data.frame(models,beta_hat_0,beta_hat)
+Data
+summary(model1)
+summary(model2)
+summary(model3)
+summary(model4)
+
+extract <- function(m){
+  c(
+    Intercept = coef(m)[1],
+    Slope = coef(m)[2],
+    R2 = summary(m)$r.squared,
+    p_value = summary(m)$coefficients[2,4]
+  )
+}
+
+results <- rbind(
+  crim = extract(model1),
+  nox = extract(model2),
+  black = extract(model3),
+  lstat = extract(model4)
+)
+
+results
+
+```
+
+#### The model with lstat as predictor gives the best fit.
+Highest R-squared (around 0.54, much larger than others),
+,Very small p-value (≈ 0),Strong linear relationship with medv,Lowest residual standard error
+
+### Comparing coefficients and usefulness of predictors:
+
+#### Crime rate (crim):
+
+Negative coefficient → higher crime lowers home value
+
+Statistically significant
+
+Explains only a small portion of variability
+
+Useful, but not a strong standalone predictor
+
+#### Nitrogen oxides (nox)
+
+Negative coefficient → more pollution lowers prices
+
+Stronger effect than crime
+
+Still limited explanatory power alone
+
+#### Proportion of blacks (black)
+
+Positive coefficient
+
+Statistically significant, but low R²
+
+Weak predictor by itself
+
+#### Lower status population (lstat)
+
+Strong negative coefficient
+
+Extremely significant
+
+Largest magnitude effect
+
+Best single predictor among the four
