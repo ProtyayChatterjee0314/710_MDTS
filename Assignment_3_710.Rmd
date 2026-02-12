@@ -1,0 +1,200 @@
+---
+title: "Assignment_3_710"
+author: "PROTYAY CHATTERJEE"
+date: "2026-02-11"
+output:
+  word_document: default
+  html_document: default
+---
+
+## Problem Set 3: Multiple Linear Regression
+
+### 2.Problem to demonstrate the role of qualitative (nominal) predictors in addition to quantitative predictors in multiple linear regression.
+
+#### Attach “Credits” data from R. 
+
+```{r}
+
+library(ISLR)
+data(Credit)
+attach(Credit)
+```
+
+#### Regress “balance” on
+#### (a) “gender” only.
+
+```{r}
+m_a=lm(Balance~Gender,data=Credit)
+summary(m_a)
+
+```
+#### (b) “gender” and “ethnicity”
+
+```{r}
+m_b=lm(Balance~Gender + Ethnicity , data=Credit)
+summary(m_b)
+```
+#### (c) “gender”, “ethnicity”, “income”.
+
+```{r}
+m_c=lm(Balance ~ Gender + Ethnicity + Income , data = Credit)
+summary(m_c)
+```
+```{r}
+#install.packages("stargazer")
+library(stargazer)
+```
+
+#### (d) Output all the regressions in (a)-(c) in a single table using stargazer. Comment on the significant coefficients in each of the models.
+```{r}
+stargazer(m_a, m_b, m_c, type = "text", out="text.txt")
+
+```
+#### Comments:
+
+##### 1. Model a(m_a) and Model b(m_b): None of them yield statistically significant coefficients at the standard $\alpha = 0.05$ level.
+
+##### 2. Model c(m_c) : When Income is added, its coefficient is highly significant (shown by 6.054***)
+
+#### (e) Explain how gender affects “balance” in each of the models (a)- (c).
+
+#### Answer :
+##### In models a,b and c the coefficients for GenderFemale are 19.733, 20.038, and 24.340, respectively.
+
+##### This means the model mathematically estimates that females have a slightly higher balance than males (who act as the baseline) by those exact dollar amounts, holding other variables in the respective models constant.
+
+##### However, because none of these coefficients are statistically significant, there is no reliable evidence that gender actually affects the credit card balance in the broader population.
+
+#### (f) Compare the average credit card balance of a male African with a male Caucasian on the basis of model (b).
+
+```{r}
+diff_b = predict(m_b, data.frame(Gender = " Male", Ethnicity = "African American")) - 
+          predict(m_b, data.frame(Gender = " Male", Ethnicity = "Caucasian"))
+diff_b
+```
+#### Comment: 
+##### "African American" is the baseline for ethnicity.
+##### To compare a male Caucasian to a male African American, we look at the EthnicityCaucasian coefficient in column 2 i.e, he coefficient is -12.653.
+
+##### On average ,a male Caucasian has a credit card balance that is 12.653 dollars less than a male African American.
+
+#### (g) Compare the average credit card balance of a male African with a maleCaucasian when each earns 100,000 dollars. For comparison, use the model in (c).
+
+```{r}
+diff_c = predict(m_c, data.frame(Gender = " Male", Ethnicity = "African American", Income = 100)) - 
+          predict(m_c, data.frame(Gender = " Male", Ethnicity = "Caucasian", Income = 100))
+
+diff_c
+
+```
+#### Observation: 
+
+##### Model (3) controls for income. When income is held constant (i.e., both individuals earn exactly $100,000), the difference between the two demographic groups is found by looking at the EthnicityCaucasian coefficient in column (3).
+
+##### The coefficient is 6.447.
+
+##### Therefore, when both earn the exact same amount, a male Caucasian is estimated to have a balance 6.447 dollars more than a male African American.
+
+#### (h) Compare and comment on the answers in (f) and (g)
+
+#### Observation:
+##### Model (2) difference: Caucasian is 12.653 dollars lower.
+
+##### Model (3) difference: Caucasian is 6.447 dollars higher.
+
+##### When we ignore income in Model (2), Caucasians appear to have lower balances. But when you control for income in Model (3), the direction of the effect completely flips. This happens because income is correlated with both ethnicity and balance.
+##### This is termed as Simpson's Paradox.
+
+#### i) Based on the model in (c), predict the credit card balance of a female Asian whose income is 2000,000 dollars.
+
+```{r}
+pred_i <- predict(m_c, data.frame(Gender = "Female", Ethnicity = "Asian", Income = 2000))
+pred_i
+```
+Model: $$\text{Balance} = \text{Constant} + \text{GenderFemale} + \text{EthnicityAsian} + (\text{Income} \times 2000)$$
+
+$$\text{Balance} = 230.029 + 24.340 + 1.637 + (6.054 \times 2000)$$$$\text{Balance} = 256.006 + 12108$$$$\text{Balance} = 12364.006$$
+
+
+#### (j) Check the goodness of fit of the different models in (a) -(c) in terms of adjusted $R^2$. Which model would be prefererable ?
+
+####Observations: 
+
+##### From looking at the "Adjusted $R^2$ " row at the bottom of table:
+##### Model (1): -0.002
+##### Model (2): -0.007
+##### Model (3): 0.208
+
+##### Model (3) is the clearly preferred model. Models (1) and (2) have negative adjusted $R^2$ values, meaning that gender and ethnicity explain essentially 0% of the variance in balance (and the model penalizes them for being useless predictors). By adding Income, Model (3) is able to explain 20.8% of the variance in credit card balances.
+
+## 4. Problem to demonstrate the impact of ignoring interaction term in multiple linear regression.
+
+#### Consider a simulation setting where the data is generated as follows:
+#### Step 1: Generate $x_{1i}$ from Normal(0,1) distribution,i=1,2,...,n
+#### Step 2: Generate $x_{2i}$ from Bernoulli (0.3) distribution,i = 1, 2, .., n
+#### Step 3: Generate $\epsilon_i$ from Normal(0,1) and hence generate the response 
+#### $$y_i = \beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \beta_3 (x_{1i} \times x_{2i}) + \epsilon_i, \quad \text{for } i = 1,2,...,n$$
+
+#### Step 4: Run two separate multiple linear regressions (i) using the model in Step 3 and (ii) using the model in Step 3 without the interaction term.
+#### Repeat Steps 1-4 , R = 1000 times. At each simulation compute the MSE for
+#### the correct model (i.e. model with the interaction term) and the naive model
+#### (i.e. the model without the interaction term). Finally find the average MSE’s
+#### 
+#### for each model. From the output, demonstrate the impact of ignoring the in-
+#### teraction term.
+#### 
+#### Carry out the analysis for n = 100 and the following parametric configurations:
+#### $(\beta_0, \beta_1, \beta_2, \beta_3)$ = (−2.5, 1.2, 2.3, 0.001) , (-2.5, 1.2. 2.3, 3.1). Set seed as 123.
+
+```{r}
+set.seed(123)
+n = 100
+R = 1000
+
+run_simulation = function(b0, b1, b2, b3) {
+  mse_correct = numeric(R)
+  mse_naive = numeric(R)
+  for (i in 1:R) {
+    x1 = rnorm(n, mean = 0, sd = 1)
+    x2 = rbinom(n, size = 1, prob = 0.3)
+    eps = rnorm(n, mean = 0, sd = 1)
+    
+    y = b0 + b1 * x1 + b2 * x2 + b3 * (x1 * x2) + eps
+    
+    mod_correct = lm(y ~ x1 * x2)
+    mod_naive = lm(y ~ x1 + x2)
+    
+    mse_correct[i] = mean(mod_correct$residuals^2)
+    mse_naive[i] = mean(mod_naive$residuals^2)
+  }
+  
+  return(c(Average_MSE_Correct = mean(mse_correct), 
+           Average_MSE_Naive = mean(mse_naive)))
+  
+}
+
+results_config1 = run_simulation(-2.5, 1.2, 2.3, 0.001)
+results_config2 = run_simulation(-2.5, 1.2, 2.3, 3.1)
+
+print("Configuration 1 (Beta3 = 0.001):")
+print(results_config1)
+
+print("Configuration 2 (Beta3 = 3.1):")
+print(results_config2)
+```
+#### The Impact of Ignoring the Interaction Term1. 
+##### First Configuration: $(\beta_0, \beta_1, \beta_2, \beta_3) = (-2.5, 1.2, 2.3, 0.001)$.
+##### In this scenario, the true coefficient for the interaction term ($\beta_3$) is $0.001$, which is almost exactly zero.
+
+##### Average MSE Correct: $\approx 0.96$
+##### Average MSE Naive: $\approx 0.97$
+
+##### Impact: Because the actual interaction effect in the data generating process is practically non-existent, omitting it from the model has no meaningful impact. Both models fit the data equally well, with an MSE hovering just below the variance of the random error term ($\epsilon \sim N(0,1)$).
+
+##### 2. Second Configuration: $(\beta_0, \beta_1, \beta_2, \beta_3) = (-2.5, 1.2, 2.3, 3.1)$
+##### In this scenario, the true coefficient for the interaction term ($\beta_3$) is $3.1$, representing a very strong interaction between $x_1$ and $x_2$.
+
+##### Average MSE Correct: $\approx 0.96$
+##### Average MSE Naive: $\approx 2.86$
+
+##### Impact: The correct model captures the interaction and maintains an expected MSE of approximately $1$. The naive model, by ignoring the strong interaction term, experiences a massive spike in its Mean Squared Error. The variance introduced by the true interaction effect ($3.1 \times x_1 \times x_2$) is entirely absorbed into the naive model's residuals, making its predictions highly inaccurate.
